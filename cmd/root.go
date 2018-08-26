@@ -10,6 +10,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+var VERSION string
+
 var cfgFile string
 var verbose bool
 
