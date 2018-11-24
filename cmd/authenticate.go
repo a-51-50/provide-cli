@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"syscall"
 
 	"github.com/provideservices/provide-go"
 	"github.com/spf13/cobra"
@@ -65,17 +66,23 @@ func doEmailPrompt() string {
 
 func doPasswordPrompt() string {
 	fmt.Print("Password: ")
-	password, err := terminal.ReadPassword(0)
+	//reader := bufio.NewReader(os.Stdin)
+	//password, err := reader.ReadString('\n')
+	bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
+	//fmt.Print(password)
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
-	passwd := string(password[:])
+	password := string(bytePassword)
+	//passwd := string(password[:])
+	passwd := strings.TrimSpace(password)
 	if passwd == "" {
 		log.Println("Failed to read password from stdin")
 		os.Exit(1)
 	}
 	return strings.Trim(passwd, "\n")
+	//return passwd
 }
 
 func cacheAPIToken(token string) {

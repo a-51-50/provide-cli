@@ -11,7 +11,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
+
+	//"syscall"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -38,8 +39,9 @@ var contractsCompileCmd = &cobra.Command{
 }
 
 func shellOut(bash string) error {
-	cmd := exec.Command("bash", "-c", bash)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	//log.Println(bash)
+	cmd := exec.Command("cmd", "/C", bash)
+	//cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	_, err := cmd.Output()
 	return err
 }
@@ -290,6 +292,7 @@ func baseFilenameNoExt(path string) string {
 }
 
 func buildCompileCommand(sourcePath string, optimizerRuns int) string {
+	log.Printf("solc --optimize --optimize-runs %d --pretty-json --metadata-literal --combined-json abi,asm,ast,bin,bin-runtime,clone-bin,compact-format,devdoc,hashes,interface,metadata,opcodes,srcmap,srcmap-runtime,userdoc -o %s %s", optimizerRuns, compileWorkdir, sourcePath)
 	return fmt.Sprintf("solc --optimize --optimize-runs %d --pretty-json --metadata-literal --combined-json abi,asm,ast,bin,bin-runtime,clone-bin,compact-format,devdoc,hashes,interface,metadata,opcodes,srcmap,srcmap-runtime,userdoc -o %s %s", optimizerRuns, compileWorkdir, sourcePath)
 	// TODO: run optimizer over certain sources if identified for frequent use via contract-internal CREATE opcodes
 }
@@ -307,6 +310,7 @@ func compile(sourcePath string) {
 	compiledContractPath := fmt.Sprintf("%s/combined.json", compileWorkdir)
 	log.Printf("Attempting to compile contract(s) %s from source: %s; target: %s", name, sourcePath, compiledContractPath)
 
+	log.Println("---------------------")
 	err = shellOut(buildCompileCommand(sourcePath, compilerOptimizerRuns))
 	if err != nil {
 		log.Printf("Failed to compile contract(s): %s; %s", name, err.Error())
