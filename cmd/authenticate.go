@@ -57,32 +57,30 @@ func doEmailPrompt() string {
 		log.Println(err)
 		os.Exit(1)
 	}
+	email = strings.TrimSpace(email)
 	if email == "" {
 		log.Println("Failed to read email from stdin")
 		os.Exit(1)
 	}
-	return strings.Trim(email, "\n")
+	// Remove both \r and \n as in windows uses LF and CF chars
+	return strings.Replace(email, "\r\n", "", -1)
 }
 
 func doPasswordPrompt() string {
 	fmt.Print("Password: ")
-	//reader := bufio.NewReader(os.Stdin)
-	//password, err := reader.ReadString('\n')
 	bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
-	//fmt.Print(password)
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 	password := string(bytePassword)
-	//passwd := string(password[:])
 	passwd := strings.TrimSpace(password)
 	if passwd == "" {
 		log.Println("Failed to read password from stdin")
 		os.Exit(1)
 	}
-	return strings.Trim(passwd, "\n")
-	//return passwd
+	// Remove both \r and \n as in windows uses LF and CF chars
+	return strings.Replace(passwd, "\r\n", "", -1)
 }
 
 func cacheAPIToken(token string) {

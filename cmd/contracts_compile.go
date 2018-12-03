@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"regexp"
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -38,11 +40,36 @@ var contractsCompileCmd = &cobra.Command{
 	Run:   compileContract,
 }
 
+//RegSplit to split a text by delmiter regex
+func RegSplit(text, delimiter string) [] string {
+	reg := regexp.MustCompile(delimiter)
+	indexes := reg.FindAllStringIndex(text, -1)
+	lastStart := 0
+	result := make([] string, len(indexes)+1)
+	for i, element := range indexes {
+		result[i] = text[lastStart:element[0]]
+		lastStart = element[1]
+	}
+	result[len(indexes)] = text[lastStart:len(text)]
+	return result
+}
+
+// use the OS/native call to execute the command, for this
+// we've to split the arguments and pass every argument as individual (spaces don't work)
 func shellOut(bash string) error {
+	//bash = strings.Trim(bash, "solc ")
 	//log.Println(bash)
-	cmd := exec.Command("cmd", "/C", bash)
+	bashArgs := RegSplit(bash, "\\s+")
+	//fmt.Println(bashArgs)
+	//cmd := exec.Command("cmd", "/C", bash)
+	// Use string slice to send the command and arguments and let Go take care.
+	cmd := exec.Command(bashArgs[0], bashArgs[1:]...)
 	//cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	_, err := cmd.Output()
+	//_, err := cmd.Output()
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	//log.Printf("Output %q\n", out.String())
 	return err
 }
 
@@ -292,7 +319,7 @@ func baseFilenameNoExt(path string) string {
 }
 
 func buildCompileCommand(sourcePath string, optimizerRuns int) string {
-	log.Printf("solc --optimize --optimize-runs %d --pretty-json --metadata-literal --combined-json abi,asm,ast,bin,bin-runtime,clone-bin,compact-format,devdoc,hashes,interface,metadata,opcodes,srcmap,srcmap-runtime,userdoc -o %s %s", optimizerRuns, compileWorkdir, sourcePath)
+	//log.Printf("solc --optimize --optimize-runs %d --pretty-json --metadata-literal --combined-json abi,asm,ast,bin,bin-runtime,clone-bin,compact-format,devdoc,hashes,interface,metadata,opcodes,srcmap,srcmap-runtime,userdoc -o %s %s", optimizerRuns, compileWorkdir, sourcePath)
 	return fmt.Sprintf("solc --optimize --optimize-runs %d --pretty-json --metadata-literal --combined-json abi,asm,ast,bin,bin-runtime,clone-bin,compact-format,devdoc,hashes,interface,metadata,opcodes,srcmap,srcmap-runtime,userdoc -o %s %s", optimizerRuns, compileWorkdir, sourcePath)
 	// TODO: run optimizer over certain sources if identified for frequent use via contract-internal CREATE opcodes
 }
@@ -305,12 +332,12 @@ func compile(sourcePath string) {
 	}
 
 	name := baseFilenameNoExt(sourcePath)
-	log.Printf("Resolved contract base name: %s", name)
+	//log.Printf("Resolved contract base name: %s", name)
 
 	compiledContractPath := fmt.Sprintf("%s/combined.json", compileWorkdir)
-	log.Printf("Attempting to compile contract(s) %s from source: %s; target: %s", name, sourcePath, compiledContractPath)
+	//log.Printf("Attempting to compile contract(s) %s from source: %s; target: %s", name, sourcePath, compiledContractPath)
 
-	log.Println("---------------------")
+	//log.Println("---------------------")
 	err = shellOut(buildCompileCommand(sourcePath, compilerOptimizerRuns))
 	if err != nil {
 		log.Printf("Failed to compile contract(s): %s; %s", name, err.Error())
